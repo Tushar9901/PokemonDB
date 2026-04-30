@@ -1,2 +1,3 @@
 # PokemonDB
-Snowflake and AWS combined Pokemon data will be there.
+Snowflake and AWS combined Pokemon data will be here.
+From CSV
