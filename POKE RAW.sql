@@ -125,6 +125,27 @@ SELECT
   PARSE_JSON(REPLACE(REPLACE(REPLACE(REPLACE(poke_det.SPRITES, 'True', 'true'), 'False', 'false'), 'None', 'null'), '''', '"')):front_shiny_female::STRING   AS front_shiny_female
   from POKEDB.GIT.POKE_DETAIL poke_det
 
+-- Stats Flattened
+ SELECT
+  id,name,
+  st.value:base_stat::STRING   AS base_stat,
+  st.value:effort::STRING   AS effort,
+  st.value:stat.name::STRING   AS stat_name,
+  st.value:stat.url::STRING   AS stat_url
+  from POKEDB.GIT.POKE_DETAIL poke_det
+  ,
+        LATERAL FLATTEN( input => PARSE_JSON(REPLACE(REPLACE(REPLACE(REPLACE(poke_det.STATS, 'True', 'true'), 'False', 'false'), 'None', 'null'), '''', '"')) ) st
+
+-- type Flattened
+ SELECT
+  id,name,
+  ty.value:type.name::STRING   AS type_name,
+  ty.value:type.url::STRING   AS type_url,
+  ty.value:slot::STRING   AS slot,
+  from POKEDB.GIT.POKE_DETAIL poke_det
+  ,
+        LATERAL FLATTEN( input => PARSE_JSON(REPLACE(REPLACE(REPLACE(REPLACE(poke_det.TYPES, 'True', 'true'), 'False', 'false'), 'None', 'null'), '''', '"')) ) ty
+
 -- LANGUAGE
 -- Names Flattened
 SELECT
@@ -138,3 +159,111 @@ SELECT
   from POKEDB.GIT.POKE_LANGUAGE poke_lang
   ,
         LATERAL FLATTEN( input => PARSE_JSON(REPLACE(REPLACE(REPLACE(REPLACE(poke_lang.NAMES, 'True', 'true'), 'False', 'false'), 'None', 'null'), '''', '"')) ) l
+
+-- ABILITY
+-- Effect changes Flattened
+ SELECT
+  id,name,
+  a1.value:effect::STRING   AS effect_desc,
+  a1.value:language.name::STRING   AS effect_language_name,
+  a1.value:language.url::STRING   AS effect_language_url,
+  ec.value:version_group.name::STRING   AS effect_version_group_name
+  from POKEDB.GIT.POKE_ABILITY poke_abt
+  ,
+        LATERAL FLATTEN( input => PARSE_JSON(
+          REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+            REPLACE(REPLACE(REPLACE(poke_abt.EFFECT_CHANGES, 'True', 'true'), 'False', 'false'), 'None', 'null'),
+            ''': ''', '": "'),
+            ''': "', '": "'),
+            '": ''', '": "'),
+            '{''', '{"'),
+            '''}', '"}'),
+            '[''', '["'),
+            ''']', '"]'),
+            ''', ''', '", "'),
+            ''', "', '", "'),
+            '", ''', '", "'),
+            ''', {', '", {'),
+            '}, ''', '}, "'),
+            '], ''', '], "'),
+            ''': [', '": ['),
+            ''': {', '": {')
+        ) ) ec,
+        LATERAL FLATTEN( input => ec.value:effect_entries ) a1
+
+-- Effect entries Flattened
+ SELECT
+  id,name,
+  ee.value:effect::STRING   AS effect_desc,
+  ee.value:language.name::STRING   AS effect_language_name,
+  ee.value:language.url::STRING   AS effect_language_url,
+  ee.value:short_effect::STRING   AS short_effect_name
+  from POKEDB.GIT.POKE_ABILITY poke_abt
+  ,
+        LATERAL FLATTEN( input => PARSE_JSON(
+          
+            REPLACE(REPLACE(REPLACE(poke_abt.EFFECT_ENTRIES, 'True', 'true'), 'False', 'false'), 'None', 'null')
+        ) ) ee
+
+-- Flavor text entries flattened
+SELECT 
+id,name,
+  fte.value:flavor_text::STRING as flavor_text,
+  fte.value:language.name::STRING as language_name,
+  fte.value:version_group.name::STRING as version_group_name
+FROM POKEDB.GIT.POKE_ABILITY poke_abt
+,
+    LATERAL FLATTEN( input => PARSE_JSON(
+            REPLACE(REPLACE(REPLACE(poke_abt.FLAVOR_TEXT_ENTRIES, 'True', 'true'), 'False', 'false'), 'None', 'null')) ) fte
+
+-- Genereation flattened
+ SELECT
+  id,name,
+  PARSE_JSON(REPLACE(REPLACE(REPLACE(REPLACE(poke_abt.GENERATION, 'True', 'true'), 'False', 'false'), 'None', 'null'), '''', '"')):name::STRING   AS generation_name,
+  PARSE_JSON(REPLACE(REPLACE(REPLACE(REPLACE(poke_abt.GENERATION, 'True', 'true'), 'False', 'false'), 'None', 'null'), '''', '"')):url::STRING   AS generation_url
+  from POKEDB.GIT.POKE_ABILITY poke_abt
+
+-- Names flattened
+ SELECT
+  id,name,
+  en.value:name::STRING as ability_name,
+  en.value:language.name::STRING as language_name,
+  en.value:language.url::STRING as language_url
+  from POKEDB.GIT.POKE_ABILITY poke_abt
+  ,
+        LATERAL FLATTEN( input => PARSE_JSON(
+          REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+            REPLACE(REPLACE(REPLACE(poke_abt.NAMES, 'True', 'true'), 'False', 'false'), 'None', 'null'),
+            ''': ''', '": "'),
+            ''': "', '": "'),
+            '": ''', '": "'),
+            '{''', '{"'),
+            '''}', '"}'),
+            '[''', '["'),
+            ''']', '"]'),
+            ''', ''', '", "'),
+            ''', "', '", "'),
+            '", ''', '", "'),
+            ''', {', '", {'),
+            '}, ''', '}, "'),
+            '], ''', '], "'),
+            ''': [', '": ['),
+            ''': {', '": {')
+        ) ) en
+
+-- Pokemon flattened
+  SELECT
+  id,name,
+  epk.value:is_hidden::BOOLEAN as is_hidden,
+  epk.value:pokemon.name::STRING as pokemon_name,
+  epk.value:pokemon.url::STRING as pokemon_url,
+  epk.value:slot::INTEGER as slot
+  from POKEDB.GIT.POKE_ABILITY poke_abt
+  ,
+        LATERAL FLATTEN( input => PARSE_JSON(
+          
+            REPLACE(REPLACE(REPLACE(poke_abt.POKEMON, 'True', 'true'), 'False', 'false'), 'None', 'null')
+        ) ) epk
+
+--BERRY 1
+
