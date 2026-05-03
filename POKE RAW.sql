@@ -266,4 +266,54 @@ FROM POKEDB.GIT.POKE_ABILITY poke_abt
         ) ) epk
 
 --BERRY 1
+-- Firmness flattened
+ SELECT
+  id,name,
+  PARSE_JSON(REPLACE(REPLACE(REPLACE(REPLACE(poke_ber1.FIRMNESS, 'True', 'true'), 'False', 'false'), 'None', 'null'), '''', '"')):name::STRING   AS berry_firmness,
+  PARSE_JSON(REPLACE(REPLACE(REPLACE(REPLACE(poke_ber1.FIRMNESS, 'True', 'true'), 'False', 'false'), 'None', 'null'), '''', '"')):url::STRING   AS species_url
+from POKEDB.GIT.POKE_BERRY poke_ber1
 
+-- Flavours flattened
+SELECT
+  id,name,
+  flb.value:flavor.name::STRING AS berry_name,
+  flb.value:flavor.url::STRING AS berry_url,
+  flb.value:potency::INT AS potency
+  from POKEDB.GIT.POKE_BERRY poke_ber1
+  ,
+        LATERAL FLATTEN( input => PARSE_JSON(REPLACE(REPLACE(REPLACE(REPLACE(poke_ber1.FLAVORS, 'True', 'true'), 'False', 'false'), 'None', 'null'), '''', '"')) ) flb
+        where flb.value:potency::INT <> 0
+
+-- Item flattened
+ SELECT
+  id,name,
+  PARSE_JSON(REPLACE(REPLACE(REPLACE(REPLACE(poke_ber1.ITEM, 'True', 'true'), 'False', 'false'), 'None', 'null'), '''', '"')):name::STRING   AS berry_item_name,
+  PARSE_JSON(REPLACE(REPLACE(REPLACE(REPLACE(poke_ber1.ITEM, 'True', 'true'), 'False', 'false'), 'None', 'null'), '''', '"')):url::STRING   AS berry_item_url
+from POKEDB.GIT.POKE_BERRY poke_ber1
+
+-- Natural gift type flattened
+ SELECT
+  id,name,
+  PARSE_JSON(REPLACE(REPLACE(REPLACE(REPLACE(poke_ber1.NATURAL_GIFT_TYPE, 'True', 'true'), 'False', 'false'), 'None', 'null'), '''', '"')):name::STRING   AS berry_natural_gift_type_name,
+  PARSE_JSON(REPLACE(REPLACE(REPLACE(REPLACE(poke_ber1.NATURAL_GIFT_TYPE, 'True', 'true'), 'False', 'false'), 'None', 'null'), '''', '"')):url::STRING   AS berry_natural_gift_type_url
+from POKEDB.GIT.POKE_BERRY poke_ber1
+
+-- BERRY 2
+-- BERRIES Flattened
+SELECT
+  id,name,
+  br.value:name::STRING AS berry_name,
+  br.value:url::STRING AS berry_url
+  from POKEDB.GIT.POKE_BERRY_FIRMNESS poke_ber2
+  ,
+        LATERAL FLATTEN( input => PARSE_JSON(REPLACE(REPLACE(REPLACE(REPLACE(poke_ber2.BERRIES, 'True', 'true'), 'False', 'false'), 'None', 'null'), '''', '"')) ) br
+
+-- language names Flattened
+SELECT
+  id,name,
+  lna.value:language.name::STRING AS berry_short_lang_name,
+  lna.value:language.url::STRING AS berry_short_lang_url,
+  lna.value:name::STRING AS berry_firm_desc_name
+  from POKEDB.GIT.POKE_BERRY_FIRMNESS poke_ber2
+  ,
+        LATERAL FLATTEN( input => PARSE_JSON(REPLACE(REPLACE(REPLACE(REPLACE(poke_ber2.NAMES, 'True', 'true'), 'False', 'false'), 'None', 'null'), '''', '"')) ) lna
